@@ -7,22 +7,5 @@ services:
     environment:
       - NODE_ENV=production
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-    expose:
-      - "3000"
-
-  caddy:
-    image: caddy:2
-    restart: always
     ports:
-      - "3821:80"
-      - "3822:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - app
-
-volumes:
-  caddy_data:
-  caddy_config:
+      - "3821:3000"
