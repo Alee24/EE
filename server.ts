@@ -15,10 +15,14 @@ import {
   INITIAL_MAINTENANCE,
   INITIAL_FUEL,
   INITIAL_LOYALTY,
+  INITIAL_STUDENTS,
+  INITIAL_SCHOOL_BUSES,
   generateSeatsForBus
 } from './src/data/mockData.js';
-import { Trip, Booking, Vehicle, MaintenanceRecord } from './src/types.js';
+import { Trip, Booking, Vehicle, MaintenanceRecord, Student, SchoolBus } from './src/types.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
@@ -38,6 +42,8 @@ let gpsLocations = { ...INITIAL_GPS_LOCATIONS };
 let maintenanceRecords: MaintenanceRecord[] = [...INITIAL_MAINTENANCE];
 let fuelLogs = [...INITIAL_FUEL];
 let loyalty = { ...INITIAL_LOYALTY };
+let students: Student[] = [...INITIAL_STUDENTS];
+let schoolBuses: SchoolBus[] = [...INITIAL_SCHOOL_BUSES];
 
 // Initialize Gemini Client
 let ai: GoogleGenAI | null = null;
@@ -348,6 +354,187 @@ app.post('/api/ai/route-intelligence', async (req, res) => {
     journeyScore: 94,
     explanation: 'Highway A109 is clear with optimal road conditions today. Morning departures (07:00 AM) avoid heavy afternoon freight traffic.',
   });
+});
+
+// 9. School Transport Data
+app.get('/api/school/data', (req, res) => {
+  res.json({
+    students,
+    schoolBuses,
+  });
+});
+
+// 10. Update Student Status (e.g. RFID Scan)
+app.post('/api/school/update-student-status', (req, res) => {
+  const { studentId, status, eventTime } = req.body;
+  const std = students.find(s => s.id === studentId);
+  if (!std) {
+    return res.status(404).json({ error: 'Student not found' });
+  }
+
+  std.status = status;
+  if (eventTime) std.lastEventTime = eventTime;
+
+  // Also adjust onboard student count on corresponding bus
+  const bus = schoolBuses.find(b => b.id === std.busId);
+  if (bus) {
+    const onboard = students.filter(s => s.busId === bus.id && s.status === 'on_bus').length;
+    bus.studentsOnboardCount = onboard;
+  }
+
+  res.json({ success: true, student: std, bus });
+});
+
+// 11. Update Bus Telematics (GPS, Speed, ETA)
+app.post('/api/school/update-telematics', (req, res) => {
+  const { busId, currentLat, currentLng, speedKmH, headingDegree, nextStopName, estimatedArrivalNextStop } = req.body;
+  const bus = schoolBuses.find(b => b.id === busId);
+  if (!bus) {
+    return res.status(404).json({ error: 'School bus not found' });
+  }
+
+  if (currentLat !== undefined) bus.currentLat = currentLat;
+  if (currentLng !== undefined) bus.currentLng = currentLng;
+  if (speedKmH !== undefined) {
+    bus.speedKmH = speedKmH;
+    bus.isSpeedingAlert = speedKmH > bus.speedLimitKmH;
+  }
+  if (headingDegree !== undefined) bus.headingDegree = headingDegree;
+  if (nextStopName) bus.nextStopName = nextStopName;
+  if (estimatedArrivalNextStop) bus.estimatedArrivalNextStop = estimatedArrivalNextStop;
+
+  res.json({ success: true, bus });
+});
+
+// 12. AI Accessibility & Multi-Disability Assistant for School Transport
+app.post('/api/ai/school-accessibility', async (req, res) => {
+  const { studentId, busId, disabilityType, targetLocationName, currentSpeedKmH, distanceMeters, etaMinutes } = req.body;
+  const client = getGeminiClient();
+
+  const std = students.find(s => s.id === studentId) || students[0];
+  const bus = schoolBuses.find(b => b.id === busId) || schoolBuses[0];
+  const disType = disabilityType || std.disability;
+  const dist = distanceMeters || 850;
+  const eta = etaMinutes || 4;
+  const speed = currentSpeedKmH !== undefined ? currentSpeedKmH : bus.speedKmH;
+  const locName = targetLocationName || std.stopName;
+
+  const fallbackData = {
+    visual_impairment: {
+      spokenAudioText: `Attention ${std.parentName || 'Parent'}. School Bus ${bus.registrationNumber} driven by ${bus.driverName} is currently ${dist} meters away, traveling at a safe ${speed} kilometers per hour. Estimated arrival at ${locName} is in ${eta} minutes. Matron ${bus.matronName} is prepared to guide ${std.name} to front row Seat 1A. Please prepare to step toward the designated gate.`,
+      visualAlertText: `🔊 AUDIO PROXIMITY ACTIVE: Bus ${bus.registrationNumber} is ${dist}m away (${eta} mins). Safe speed ${speed} km/h. Matron ${bus.matronName} standing by at door.`,
+      hapticPattern: 'double_pulse',
+      driverActionRequired: 'Activate external proximity chime and guide student with visual impairment at doorstep.',
+      keySafetyPoints: [
+        'Spoken audio voice broadcast dispatched',
+        'Curb audio beacon ready at gate',
+        'Matron assistance confirmed for boarding'
+      ]
+    },
+    wheelchair_mobility: {
+      spokenAudioText: `School Bus ${bus.registrationNumber} is ${dist} meters away traveling at ${speed} km/h. ETA at ${locName} is ${eta} minutes. Hydraulic wheelchair lift deployment has been scheduled for Driver ${bus.driverName}. Wheelchair Bay #1 is locked and cleared.`,
+      visualAlertText: `♿ ACCESSIBILITY ALERT: Bus ${bus.registrationNumber} arriving in ${eta} mins. Hydraulic lift deployment signal sent to Driver ${bus.driverName}. Wheelchair Bay #1 reserved.`,
+      hapticPattern: 'rapid_pulse',
+      driverActionRequired: 'Deploy hydraulic lift upon arrival, lower wheelchair ramp to curb level, and secure four-point wheel clamp.',
+      keySafetyPoints: [
+        'Hydraulic lift pre-deployment signal sent',
+        'Wheelchair Bay #1 cleared & secured',
+        'Curb clearance verified for ramp extension'
+      ]
+    },
+    hearing_impairment: {
+      spokenAudioText: `School bus is ${dist} meters away, ETA ${eta} minutes at ${locName}. Visual strobe alert active on student wearable device.`,
+      visualAlertText: `🟢 HIGH-VISIBILITY FLASH ALERT: School Bus ${bus.registrationNumber} is ${dist}m away (${eta} mins ETA). Speed: ${speed} km/h. Driver ${bus.driverName} is arriving at ${locName}. Step to designated pickup point.`,
+      hapticPattern: 'rapid_pulse',
+      driverActionRequired: 'Turn on front cabin amber beacon light and use clear hand-sign greeting.',
+      keySafetyPoints: [
+        'High-contrast visual strobe alert active',
+        'Haptic vibration pulse sent to student phone/watch',
+        'Front-facing visual signage illuminated'
+      ]
+    },
+    autism_sensory: {
+      spokenAudioText: `Bus ${bus.registrationNumber} is approaching peacefully, ${eta} minutes away. Cabin environment is calm with low engine noise.`,
+      visualAlertText: `🧘 SENSORY-CALM NOTIFICATION: Bus is ${dist}m away (${eta} mins). Cabin is quiet and orderly. Seat is reserved near front window.`,
+      hapticPattern: 'single_pulse',
+      driverActionRequired: 'No horn honking at gate. Maintain quiet cabin environment.',
+      keySafetyPoints: [
+        'Predictable visual countdown active',
+        'Silent arrival protocol enforced (no horn)',
+        'Calm low-sensory transition assisted by Matron'
+      ]
+    },
+    none: {
+      spokenAudioText: `School Bus ${bus.registrationNumber} is ${dist} meters away, traveling at ${speed} km/h. Estimated arrival at ${locName} in ${eta} minutes.`,
+      visualAlertText: `Bus ${bus.registrationNumber} is ${dist}m away (${eta} mins ETA) traveling at ${speed} km/h.`,
+      hapticPattern: 'single_pulse',
+      driverActionRequired: 'Standard safe school stop protocol.',
+      keySafetyPoints: ['Safe speed monitoring active', 'On-time arrival estimated']
+    }
+  };
+
+  if (!client) {
+    const selected = (fallbackData as any)[disType] || fallbackData.visual_impairment;
+    return res.json({
+      success: true,
+      student: std,
+      bus,
+      disabilityType: disType,
+      ...selected
+    });
+  }
+
+  try {
+    const prompt = `You are the AI Accessibility & School Transport Officer for Nairobi International Academy.
+Generate tailored real-time arrival guidance for a student with disability and their parent/transport manager:
+
+Student: ${std.name} (${std.grade})
+Disability Profile: ${disType} (Notes: ${std.specialNeedsNotes})
+Assigned School Bus: ${bus.registrationNumber} (${bus.fleetNumber})
+Driver: ${bus.driverName}, Care Matron: ${bus.matronName}
+Current Telematics: Bus is ${dist} meters away, driving at ${speed} km/h (School Zone limit: ${bus.speedLimitKmH} km/h).
+Target Destination Stop: ${locName}
+Estimated Time of Arrival: ${eta} minutes (${bus.estimatedArrivalNextStop})
+
+Please output structured JSON with:
+1. "spokenAudioText": A warm, natural, crystal-clear spoken briefing to be read aloud by speech synthesizer for a parent or visually impaired person. Include bus reg, driver, current distance, speed, ETA, and boarding action.
+2. "visualAlertText": High-visibility formatted alert message for screen display or deaf/hard of hearing users.
+3. "hapticPattern": One of "single_pulse", "double_pulse", "rapid_pulse".
+4. "driverActionRequired": Specific action instructions for Driver and Matron (e.g. wheelchair ramp readiness, sensory calm, physical guiding).
+5. "keySafetyPoints": Array of 3 short bullet points.
+
+Return ONLY valid JSON.`;
+
+    const response = await client.models.generateContent({
+      model: 'gemini-3.7-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      }
+    });
+
+    const parsed = JSON.parse(response.text || '{}');
+    return res.json({
+      success: true,
+      student: std,
+      bus,
+      disabilityType: disType,
+      spokenAudioText: parsed.spokenAudioText || (fallbackData as any)[disType]?.spokenAudioText,
+      visualAlertText: parsed.visualAlertText || (fallbackData as any)[disType]?.visualAlertText,
+      hapticPattern: parsed.hapticPattern || 'double_pulse',
+      driverActionRequired: parsed.driverActionRequired || (fallbackData as any)[disType]?.driverActionRequired,
+      keySafetyPoints: parsed.keySafetyPoints || (fallbackData as any)[disType]?.keySafetyPoints,
+    });
+  } catch (err) {
+    const selected = (fallbackData as any)[disType] || fallbackData.visual_impairment;
+    return res.json({
+      success: true,
+      student: std,
+      bus,
+      disabilityType: disType,
+      ...selected
+    });
+  }
 });
 
 // Start Express and Vite

@@ -1,3 +1,0 @@
-ec.kkdes.co.ke {
-    reverse_proxy app:3000
-}

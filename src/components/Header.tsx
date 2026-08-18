@@ -57,6 +57,19 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             <button
+              id="btn-nav-school"
+              onClick={() => setCurrentRole('school')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all ${
+                currentRole === 'school'
+                  ? 'bg-[#1A1A1A] text-white shadow-[2px_2px_0px_#006633]'
+                  : 'text-[#1A1A1A] hover:bg-white/80'
+              }`}
+            >
+              <Bus className="w-3.5 h-3.5 text-amber-500" />
+              <span>School Transport</span>
+            </button>
+
+            <button
               onClick={() => setCurrentRole('operator')}
               className={`flex items-center space-x-2 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all ${
                 currentRole === 'operator'
@@ -85,21 +98,32 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center space-x-3">
             {/* Operator Dropdown */}
             {currentRole === 'operator' && (
-              <div className="relative">
-                <select
-                  value={selectedOperator.id}
-                  onChange={e => {
-                    const found = operators.find(o => o.id === e.target.value);
-                    if (found) setSelectedOperator(found);
-                  }}
-                  className="bg-white text-[11px] font-mono font-bold text-[#1A1A1A] border border-[#1A1A1A] px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#006633]"
+              <div className="flex items-center space-x-2">
+                <label 
+                  htmlFor="header-operator-select"
+                  id="label-choose-bus"
+                  className="flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A] whitespace-nowrap"
                 >
-                  {operators.map(op => (
-                    <option key={op.id} value={op.id}>
-                      {op.name}
-                    </option>
-                  ))}
-                </select>
+                  <Bus className="w-3.5 h-3.5 text-[#006633]" />
+                  <span>Choose Bus:</span>
+                </label>
+                <div className="relative">
+                  <select
+                    id="header-operator-select"
+                    value={selectedOperator.id}
+                    onChange={e => {
+                      const found = operators.find(o => o.id === e.target.value);
+                      if (found) setSelectedOperator(found);
+                    }}
+                    className="bg-white text-[11px] font-mono font-bold text-[#1A1A1A] border border-[#1A1A1A] px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#006633] cursor-pointer shadow-[1px_1px_0px_#1A1A1A]"
+                  >
+                    {operators.map(op => (
+                      <option key={op.id} value={op.id}>
+                        {op.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             )}
 
@@ -148,18 +172,26 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Mobile Nav Switcher */}
-        <div className="flex md:hidden items-center justify-around py-2 border-t border-[#1A1A1A] text-[10px] font-bold uppercase tracking-widest">
+        <div className="flex md:hidden items-center justify-around py-2 border-t border-[#1A1A1A] text-[9px] font-bold uppercase tracking-widest">
           <button
             onClick={() => setCurrentRole('passenger')}
-            className={`px-3 py-1 border ${
+            className={`px-2 py-1 border ${
               currentRole === 'passenger' ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]' : 'text-[#1A1A1A] border-transparent'
             }`}
           >
-            Marketplace
+            Passenger
+          </button>
+          <button
+            onClick={() => setCurrentRole('school')}
+            className={`px-2 py-1 border ${
+              currentRole === 'school' ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]' : 'text-[#1A1A1A] border-transparent'
+            }`}
+          >
+            School
           </button>
           <button
             onClick={() => setCurrentRole('operator')}
-            className={`px-3 py-1 border ${
+            className={`px-2 py-1 border ${
               currentRole === 'operator' ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]' : 'text-[#1A1A1A] border-transparent'
             }`}
           >
@@ -167,7 +199,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
           <button
             onClick={() => setCurrentRole('admin')}
-            className={`px-3 py-1 border ${
+            className={`px-2 py-1 border ${
               currentRole === 'admin' ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]' : 'text-[#1A1A1A] border-transparent'
             }`}
           >

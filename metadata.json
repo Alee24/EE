@@ -1,6 +1,6 @@
 {
   "name": "Easy Coach Transport & Fleet Platform",
-  "description": "AI-Powered Kenyan Intercity Bus Transportation, Digital Ticketing, M-Pesa Payments, Real-time GPS Fleet Tracking & Operator Management System.",
+  "description": "AI-Powered Kenyan Intercity & School Bus Transportation Platform with Digital Ticketing, M-Pesa Payments, Real-time GPS Fleet Tracking, Speed Telemetry, Dynamic ETA & Multi-Disability AI Accommodations.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

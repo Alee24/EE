@@ -92,3 +92,58 @@ export async function getRouteIntelligence(origin: string, destination: string) 
   });
   return await res.json();
 }
+
+export async function fetchSchoolData() {
+  try {
+    const res = await fetch('/api/school/data');
+    if (!res.ok) throw new Error('Failed to load school transport data');
+    return await res.json();
+  } catch (err) {
+    console.warn('School data API error, using fallback', err);
+    return null;
+  }
+}
+
+export async function updateStudentStatus(studentId: string, status: string, eventTime?: string) {
+  const res = await fetch('/api/school/update-student-status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ studentId, status, eventTime }),
+  });
+  return await res.json();
+}
+
+export async function updateBusTelematics(payload: {
+  busId: string;
+  currentLat?: number;
+  currentLng?: number;
+  speedKmH?: number;
+  headingDegree?: number;
+  nextStopName?: string;
+  estimatedArrivalNextStop?: string;
+}) {
+  const res = await fetch('/api/school/update-telematics', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return await res.json();
+}
+
+export async function getSchoolAccessibilityAI(payload: {
+  studentId: string;
+  busId: string;
+  disabilityType: string;
+  targetLocationName?: string;
+  currentSpeedKmH?: number;
+  distanceMeters?: number;
+  etaMinutes?: number;
+}) {
+  const res = await fetch('/api/ai/school-accessibility', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return await res.json();
+}
+

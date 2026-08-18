@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { PassengerApp } from './components/passenger/PassengerApp';
+import { SchoolTransportApp } from './components/school/SchoolTransportApp';
 import { OperatorDashboard } from './components/operator/OperatorDashboard';
 import { SuperAdminDashboard } from './components/admin/SuperAdminDashboard';
 import { AiTravelAdvisorChatbot } from './components/common/AiTravelAdvisorChatbot';
@@ -175,6 +176,12 @@ export default function App() {
             gpsLocations={gpsLocations}
             loyalty={loyalty}
             onBookingCreated={handleBookingCreated}
+          />
+        )}
+
+        {currentRole === 'school' && (
+          <SchoolTransportApp
+            onSwitchToIntercity={() => setCurrentRole('passenger')}
           />
         )}
 

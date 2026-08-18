@@ -1,6 +1,85 @@
-export type AppRole = 'passenger' | 'operator' | 'admin';
+export type AppRole = 'passenger' | 'operator' | 'admin' | 'school';
 
 export type LoyaltyTier = 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+
+export type DisabilityType = 
+  | 'visual_impairment' 
+  | 'hearing_impairment' 
+  | 'wheelchair_mobility' 
+  | 'autism_sensory' 
+  | 'none';
+
+export interface Student {
+  id: string;
+  name: string;
+  grade: string;
+  schoolName: string;
+  parentName: string;
+  parentPhone: string;
+  parentEmail: string;
+  busId: string;
+  stopName: string;
+  stopAddress: string;
+  stopCoordinates: { lat: number; lng: number };
+  scheduledPickupTime: string; // e.g. '07:15 AM'
+  scheduledDropoffTime: string; // e.g. '03:45 PM'
+  status: 'at_home' | 'on_bus' | 'at_school' | 'absent';
+  disability: DisabilityType;
+  specialNeedsNotes: string;
+  rfidTag: string;
+  lastEventTime?: string;
+  seatNumber?: string;
+  emergencyContact: string;
+}
+
+export interface SchoolStop {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  scheduledTime: string;
+  studentIds: string[];
+  isCompleted: boolean;
+}
+
+export interface SchoolBus {
+  id: string;
+  registrationNumber: string; // e.g. 'KCC 789S'
+  fleetNumber: string; // e.g. 'SCH-04'
+  schoolName: string; // e.g. 'Nairobi International Academy'
+  routeName: string; // e.g. 'Route 4 - Westlands & Kileleshwa'
+  driverName: string;
+  driverPhone: string;
+  driverRating: number;
+  matronName: string; // Bus caregiver / matron
+  matronPhone: string;
+  currentLat: number;
+  currentLng: number;
+  speedKmH: number;
+  speedLimitKmH: number; // e.g. 40 km/h in school zone
+  isSpeedingAlert: boolean;
+  headingDegree: number;
+  status: 'en_route_pickup' | 'en_route_dropoff' | 'at_school' | 'idle';
+  totalStudentsAssigned: number;
+  studentsOnboardCount: number;
+  accessibleWheelchairLift: boolean;
+  nextStopName: string;
+  estimatedArrivalNextStop: string; // e.g. '07:18 AM (in 4 mins)'
+  doorStatus: 'CLOSED' | 'OPEN';
+  fuelPercent: number;
+  stops: SchoolStop[];
+}
+
+export interface AccessibilityBroadcast {
+  id: string;
+  disabilityType: DisabilityType;
+  spokenAudioText: string;
+  visualAlertText: string;
+  hapticPattern: 'single_pulse' | 'double_pulse' | 'rapid_pulse';
+  driverActionRequired?: string;
+  timestamp: string;
+}
 
 export interface Operator {
   id: string;
