@@ -59,6 +59,7 @@ export const SchoolTransportApp: React.FC<SchoolTransportAppProps> = ({ onSwitch
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [highContrastMode, setHighContrastMode] = useState<boolean>(false);
   const [hapticFlashed, setHapticFlashed] = useState<boolean>(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState<boolean>(false);
 
   // Simulation State
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
@@ -715,8 +716,8 @@ export const SchoolTransportApp: React.FC<SchoolTransportAppProps> = ({ onSwitch
                 </button>
                 <button
                   id="btn-simulate-home"
-                  onClick={() => handleToggleStudentStatus('at_home')}
-                  className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-[#1A1A1A] text-[11px] font-mono font-bold border border-[#1A1A1A]"
+                  onClick={() => setIsResetModalOpen(true)}
+                  className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-[#1A1A1A] text-[11px] font-mono font-bold border border-[#1A1A1A] transition active:translate-y-0.5"
                 >
                   Reset (At Home)
                 </button>
@@ -989,6 +990,87 @@ export const SchoolTransportApp: React.FC<SchoolTransportAppProps> = ({ onSwitch
         </div>
 
       </div>
+
+      {/* Confirmation Modal for Reset (At Home) */}
+      {isResetModalOpen && (
+        <div
+          id="modal-reset-confirm-backdrop"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setIsResetModalOpen(false)}
+        >
+          <div
+            id="modal-reset-confirm-dialog"
+            className="w-full max-w-md bg-white border-2 border-[#1A1A1A] shadow-[6px_6px_0px_#1A1A1A] p-6 text-[#1A1A1A] space-y-4"
+            onClick={e => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-reset-title"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-amber-100 border border-[#1A1A1A] flex items-center justify-center text-amber-700 shadow-[2px_2px_0px_#1A1A1A]">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 id="modal-reset-title" className="font-serif font-black text-base uppercase tracking-tight">
+                    Reset Student Status?
+                  </h3>
+                  <p className="text-[11px] font-mono text-slate-500">
+                    Confirmation required to prevent accidental data changes
+                  </p>
+                </div>
+              </div>
+              <button
+                id="btn-close-reset-modal-x"
+                onClick={() => setIsResetModalOpen(false)}
+                className="text-slate-400 hover:text-[#1A1A1A] p-1 text-sm font-bold font-mono"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-[#F2EFE9] border border-slate-300 p-3 text-xs font-mono space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Student:</span>
+                <span className="font-bold text-[#1A1A1A]">{selectedStudent.name} ({selectedStudent.grade})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Current Status:</span>
+                <span className="font-bold uppercase text-emerald-700">{selectedStudent.status.replace('_', ' ')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">New Target State:</span>
+                <span className="font-bold uppercase text-amber-700">At Home (Waiting)</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 font-sans leading-relaxed">
+              Resetting will clear active bus boarding telemetry logs and mark <strong>{selectedStudent.name}</strong> as waiting at home for scheduled pickup at {selectedStudent.scheduledPickupTime}.
+            </p>
+
+            <div className="flex items-center justify-end space-x-3 pt-2">
+              <button
+                id="btn-cancel-reset-modal"
+                onClick={() => setIsResetModalOpen(false)}
+                className="px-4 py-2 text-xs font-mono font-bold uppercase border border-[#1A1A1A] bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                id="btn-confirm-reset-home"
+                onClick={() => {
+                  handleToggleStudentStatus('at_home');
+                  setIsResetModalOpen(false);
+                }}
+                className="px-4 py-2 text-xs font-mono font-bold uppercase border border-[#1A1A1A] bg-amber-500 hover:bg-amber-600 text-black shadow-[2px_2px_0px_#1A1A1A] transition"
+              >
+                Confirm Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
